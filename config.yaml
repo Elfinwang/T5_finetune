@@ -1,0 +1,33 @@
+
+
+# Model Configuration
+model_path: "/data/wangyiyan/cardinality_estimation_wyy/model/t5-3b"
+# model_path: "/home/valiantsec/phb/models/codet5"
+
+
+# Dataset Configuration
+data_path: /data/wangyiyan/T5_finetune/data/train_stats_finetune.json
+# Dataset Configuration
+max_length: 128  # 输入序列的最大长度
+
+# Training Configuration
+output_dir: "./result/t5_3b_stats_ft"
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 1
+gradient_accumulation_steps: 1
+learning_rate: 1e-3
+lr_scheduler_type: "linear"
+warmup_ratio: 0.1
+num_train_epochs: 3
+
+# Saving and Logging Configuration
+save_strategy: "steps"
+save_steps: 500
+logging_steps: 100
+evaluation_strategy: "steps"
+eval_steps: 500
+
+# LoRA Configuration
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
