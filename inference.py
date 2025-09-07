@@ -103,10 +103,10 @@ def evaluate_test_set(model, tokenizer, test_data, output_csv_path):
 
 def main():
     # 路径
-    base_model_path = "./model/t5-small"
-    lora_adapter_path = "./finetune_lora/t5-small-stats-v1/checkpoint-600"
+    base_model_path = "/data/wangyiyan/cardinality_estimation_wyy/model/t5-large"
+    lora_adapter_path = "./result/t5_large_stats_ft_v4_1e-5/checkpoint-269000"
     test_file_path = "./data/test_stats.json"
-    output_csv_path = "./results/test_t5_small_ft_results.csv"
+    output_csv_path = "./test_result/test_t5_large_stats_ft_results_269000_1e-5.csv"
 
     os.makedirs(os.path.dirname(output_csv_path) if os.path.dirname(output_csv_path) else '.', exist_ok=True)
     

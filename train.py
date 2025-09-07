@@ -8,9 +8,6 @@ from peft import LoraConfig, get_peft_model
 import json
 import os
 
-# 配置日志
-# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-# logger = logging.getLogger(__name__)
 
 # 日志配置
 log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
@@ -20,16 +17,15 @@ logger.setLevel(logging.INFO)
 class T5Classifier:
     def __init__(self, config_file='./config.yaml'):
         try:
-            # 先加载配置
+            # 加载配置
             self.config = self.load_config(config_file)
-
 
             # 控制台日志
             console_handler = logging.StreamHandler()
             console_handler.setFormatter(log_formatter)
             logger.addHandler(console_handler)
 
-            # 文件日志（保存在 output_dir/train.log）
+            # 文件日志（output_dir/train.log）
             log_file = os.path.join(self.config['output_dir'], 'train.log')
             os.makedirs(os.path.dirname(log_file), exist_ok=True)
             file_handler = logging.FileHandler(log_file, encoding='utf-8')
@@ -56,7 +52,7 @@ class T5Classifier:
             with open(config_file, 'r') as file:
                 config = yaml.safe_load(file)
             
-            # 打印所有配置项的类型和值
+            # 打印配置项的类型和值
             for key, value in config.items():
                 logger.info(f"{key} - 类型: {type(value)}, 值: {value}")
             
@@ -78,10 +74,26 @@ class T5Classifier:
             inputs = [item["instruction"] + item["input"] for item in data]
             targets = [item["output"] for item in data]
 
-            # 划分训练和验证集
+
+            # 随机打乱索引并划分训练和验证集
+            
+
+            indices = np.arange(len(inputs))
+            np.random.shuffle(indices)
+
             split_idx = int(len(inputs) * 0.99)
-            train_inputs, val_inputs = inputs[:split_idx], inputs[split_idx:]
-            train_targets, val_targets = targets[:split_idx], targets[split_idx:]
+            train_indices = indices[:split_idx]
+            val_indices = indices[split_idx:]
+
+            train_inputs = [inputs[i] for i in train_indices]
+            val_inputs = [inputs[i] for i in val_indices]
+            train_targets = [targets[i] for i in train_indices]
+            val_targets = [targets[i] for i in val_indices]
+
+            # 划分训练和验证集
+            # split_idx = int(len(inputs) * 0.99)
+            # train_inputs, val_inputs = inputs[:split_idx], inputs[split_idx:]
+            # train_targets, val_targets = targets[:split_idx], targets[split_idx:]
 
             # 构建datasets
             train_dataset = [{"input": inp, "output": tgt} for inp, tgt in zip(train_inputs, train_targets)]
@@ -115,38 +127,7 @@ class T5Classifier:
             logger.error(traceback.format_exc())
             raise
 
-    # def prepare_datasets(self):
-    #     try:
-    #         logger.info("正在加载数据集...")
-    #         dataset = load_dataset("financial_phrasebank", "sentences_allagree",trust_remote_code=True)
-    #         dataset = dataset["train"].train_test_split(test_size=0.1)
-    #         dataset["validation"] = dataset["test"]
-    #         del dataset["test"]
-
-    #         classes = dataset["train"].features["label"].names
-    #         dataset = dataset.map(
-    #             lambda x: {"text_label": [classes[label] for label in x["label"]]},
-    #             batched=True,
-    #             num_proc=1,
-    #         )
-    #         logger.info("数据集已准备好并分为训练集和验证集。")
-
-    #         processed_datasets = dataset.map(
-    #             self.preprocess_function,
-    #             batched=True,
-    #             num_proc=1,
-    #             remove_columns=dataset["train"].column_names,
-    #             load_from_cache_file=False,
-    #             desc="正在对数据集运行分词器",
-    #         )
-
-    #         self.train_dataset = processed_datasets["train"]
-    #         self.eval_dataset = processed_datasets["validation"]
-    #         logger.info("数据集已处理并进行分词。")
-    #     except Exception as e:
-    #         logger.error(f"准备数据集时发生错误: {str(e)}")
-    #         logger.error(traceback.format_exc())
-    #         raise
+ 
 
     def configure_lora(self):
         try:
