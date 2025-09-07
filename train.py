@@ -242,72 +242,41 @@ class T5Classifier:
 
 
 
-
     def compute_metrics(self, eval_pred):
         try:
             predictions, labels = eval_pred
+            logger.info(f"预测结果类型: {type(predictions)}")
+            logger.info(f"标签类型: {type(labels)}")
+            
+            if isinstance(predictions, tuple):
+                logger.info(f"预测结果是一个包含 {len(predictions)} 个元素的元组")
+                # 假设第一个元素包含 logits
+                predictions = predictions[0]
+            
+            logger.info(f"预测结果形状: {predictions.shape}")
+            logger.info(f"标签形状: {labels.shape}")
+            
+            # 通过取 argmax 获取预测的类别
+            predicted_classes = np.argmax(predictions, axis=-1)
+            
+            decoded_preds = self.tokenizer.batch_decode(predicted_classes, skip_special_tokens=True)
+            # 将 -100 替换为 tokenizer.pad_token_id
+            labels = np.where(labels != -100, labels, self.tokenizer.pad_token_id)
+            decoded_labels = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
 
-            if predictions.ndim == 3:
-                predictions = np.argmax(predictions, axis=-1)
+            logger.info(f"样本预测: {decoded_preds[0]}")
+            logger.info(f"样本标签: {decoded_labels[0]}")
 
-            # 将 -100 替换为 pad_token_id
-            labels = np.where(labels != -100, self.tokenizer.pad_token_id, labels)
+            # 比较预测和标签
+            accuracy = sum([pred.strip() == label.strip() for pred, label in zip(decoded_preds, decoded_labels)]) / len(decoded_preds)
 
-            # 解码为字符串
-            pred_str = self.tokenizer.batch_decode(predictions, skip_special_tokens=True)
-            label_str = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
-
-            # 计算准确率
-            accuracy = sum([p.strip() == l.strip() for p, l in zip(pred_str, label_str)]) / len(pred_str)
-
-            self.logger.info(f"样本预测: {pred_str[0]}")
-            self.logger.info(f"样本标签: {label_str[0]}")
-            self.logger.info(f"计算得到的准确率: {accuracy}")
+            logger.info(f"计算得到的准确率: {accuracy}")
 
             return {"accuracy": accuracy}
         except Exception as e:
-            self.logger.error(f"compute_metrics 中发生错误: {str(e)}")
-            self.logger.error(traceback.format_exc())
-            return {"accuracy": 0.0}
-
-
-
-
-    # def compute_metrics(self, eval_pred):
-    #     try:
-    #         predictions, labels = eval_pred
-    #         logger.info(f"预测结果类型: {type(predictions)}")
-    #         logger.info(f"标签类型: {type(labels)}")
-            
-    #         if isinstance(predictions, tuple):
-    #             logger.info(f"预测结果是一个包含 {len(predictions)} 个元素的元组")
-    #             # 假设第一个元素包含 logits
-    #             predictions = predictions[0]
-            
-    #         logger.info(f"预测结果形状: {predictions.shape}")
-    #         logger.info(f"标签形状: {labels.shape}")
-            
-    #         # 通过取 argmax 获取预测的类别
-    #         predicted_classes = np.argmax(predictions, axis=-1)
-            
-    #         decoded_preds = self.tokenizer.batch_decode(predicted_classes, skip_special_tokens=True)
-    #         # 将 -100 替换为 tokenizer.pad_token_id
-    #         labels = np.where(labels != -100, labels, self.tokenizer.pad_token_id)
-    #         decoded_labels = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
-
-    #         logger.info(f"样本预测: {decoded_preds[0]}")
-    #         logger.info(f"样本标签: {decoded_labels[0]}")
-
-    #         # 比较预测和标签
-    #         accuracy = sum([pred.strip() == label.strip() for pred, label in zip(decoded_preds, decoded_labels)]) / len(decoded_preds)
-
-    #         logger.info(f"计算得到的准确率: {accuracy}")
-
-    #         return {"accuracy": accuracy}
-    #     except Exception as e:
-    #         logger.error(f"compute_metrics 中发生错误: {str(e)}")
-    #         logger.error(traceback.format_exc())
-    #         return {"accuracy": 0.0}  # 返回默认值
+            logger.error(f"compute_metrics 中发生错误: {str(e)}")
+            logger.error(traceback.format_exc())
+            return {"accuracy": 0.0}  # 返回默认值
 
 def main():
     try:
